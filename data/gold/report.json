@@ -1,0 +1,115 @@
+{
+  "generated_at": "2026-04-11T10:44:34.045247",
+  "pipeline": "ETL Logística · Bronze → Silver → Gold",
+  "tables": {
+    "carrier_kpis": [
+      {
+        "carrier": "Braspress",
+        "total_orders": 112,
+        "delivered": 56,
+        "delayed": 13,
+        "avg_freight_cost": 191.13,
+        "avg_lead_time_days": 5.4,
+        "delivery_rate_pct": 50.0,
+        "delay_rate_pct": 11.6
+      },
+      {
+        "carrier": "Jadlog",
+        "total_orders": 108,
+        "delivered": 58,
+        "delayed": 11,
+        "avg_freight_cost": 186.31,
+        "avg_lead_time_days": 5.2,
+        "delivery_rate_pct": 53.7,
+        "delay_rate_pct": 10.2
+      },
+      {
+        "carrier": "Correios",
+        "total_orders": 102,
+        "delivered": 48,
+        "delayed": 13,
+        "avg_freight_cost": 192.29,
+        "avg_lead_time_days": 5.4,
+        "delivery_rate_pct": 47.1,
+        "delay_rate_pct": 12.7
+      },
+      {
+        "carrier": "Total Express",
+        "total_orders": 99,
+        "delivered": 58,
+        "delayed": 10,
+        "avg_freight_cost": 170.76,
+        "avg_lead_time_days": 5.8,
+        "delivery_rate_pct": 58.6,
+        "delay_rate_pct": 10.1
+      },
+      {
+        "carrier": "Sequoia",
+        "total_orders": 79,
+        "delivered": 40,
+        "delayed": 12,
+        "avg_freight_cost": 197.41,
+        "avg_lead_time_days": 5.2,
+        "delivery_rate_pct": 50.6,
+        "delay_rate_pct": 15.2
+      }
+    ],
+    "region_summary": [
+      {
+        "region": "Centro-Oeste",
+        "total_orders": 110,
+        "total_freight_cost": 20230.66,
+        "avg_weight_kg": 2.91,
+        "delayed_count": 12
+      },
+      {
+        "region": "Norte",
+        "total_orders": 109,
+        "total_freight_cost": 20428.57,
+        "avg_weight_kg": 2.95,
+        "delayed_count": 11
+      },
+      {
+        "region": "Sudeste",
+        "total_orders": 101,
+        "total_freight_cost": 17997.66,
+        "avg_weight_kg": 2.88,
+        "delayed_count": 15
+      },
+      {
+        "region": "Nordeste",
+        "total_orders": 95,
+        "total_freight_cost": 18440.05,
+        "avg_weight_kg": 3.27,
+        "delayed_count": 13
+      },
+      {
+        "region": "Sul",
+        "total_orders": 85,
+        "total_freight_cost": 16545.27,
+        "avg_weight_kg": 3.47,
+        "delayed_count": 8
+      }
+    ],
+    "monthly_trend": [
+      {
+        "month": "2024-01",
+        "orders": 248,
+        "revenue": 47355.25,
+        "delivered": 139
+      },
+      {
+        "month": "2024-02",
+        "orders": 232,
+        "revenue": 42174.08,
+        "delivered": 112
+      },
+      {
+        "month": "2024-03",
+        "orders": 20,
+        "revenue": 4112.88,
+        "delivered": 9
+      }
+    ]
+  }
+}

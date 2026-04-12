@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logistics ETL — Operations Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg:       #0d0f12;
+    --bg2:      #13161b;
+    --bg3:      #1a1e25;
+    --border:   rgba(255,255,255,0.07);
+    --border2:  rgba(255,255,255,0.13);
+    --amber:    #f0a500;
+    --amber2:   #ffc847;
+    --teal:     #1daf82;
+    --red:      #e05555;
+    --text:     #d4cfc7;
+    --muted:    #6b6760;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(240,165,0,0.07) 0%, transparent 60%),
+      var(--bg);
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(13,15,18,0.85);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    border: 1.5px solid var(--amber);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--amber);
+    letter-spacing: -1px;
+  }
+  .logo-text { font-family: var(--mono); font-size: 13px; color: var(--text); letter-spacing: 0.08em; }
+  .logo-sub  { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .status-label { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 0.1em; }
+  .ts-label { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+  /* ── LAYOUT ── */
+  main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-left: 2px;
+  }
+
+  /* ── KPI GRID ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .kpi {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(12px);
+    animation: fadeUp 0.4s ease forwards;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--amber);
+    opacity: 0.5;
+  }
+  .kpi.teal::before  { background: var(--teal); }
+  .kpi.red::before   { background: var(--red); }
+  .kpi.muted::before { background: var(--muted); }
+  .kpi-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+  .kpi-value { font-family: var(--mono); font-size: 28px; font-weight: 500; color: var(--amber2); line-height: 1; }
+  .kpi.teal  .kpi-value { color: var(--teal); }
+  .kpi.red   .kpi-value { color: var(--red); }
+  .kpi.muted .kpi-value { color: var(--text); }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+  .kpi:nth-child(1) { animation-delay: 0.05s; }
+  .kpi:nth-child(2) { animation-delay: 0.12s; }
+  .kpi:nth-child(3) { animation-delay: 0.19s; }
+  .kpi:nth-child(4) { animation-delay: 0.26s; }
+
+  /* ── CHARTS ROW ── */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease forwards;
+  }
+  .card:nth-child(1) { animation-delay: 0.3s; }
+  .card:nth-child(2) { animation-delay: 0.38s; }
+  .card-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    background: var(--amber);
+    opacity: 0.7;
+  }
+
+  /* ── BOTTOM ROW ── */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .card.delay3 { animation-delay: 0.46s; }
+  .card.delay4 { animation-delay: 0.54s; }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-align: left;
+    padding: 0 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 8px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+  .badge-green { background: rgba(29,175,130,0.15); color: var(--teal); }
+  .badge-red   { background: rgba(224,85,85,0.15);  color: var(--red); }
+  .badge-amber { background: rgba(240,165,0,0.15);  color: var(--amber2); }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 32px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    border-top: 1px solid var(--border);
+    margin-top: 32px;
+  }
+
+  /* ── LOAD SCREEN ── */
+  #load-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px;
+    z-index: 100;
+    transition: opacity 0.5s ease;
+  }
+  #load-screen.hide { opacity: 0; pointer-events: none; }
+  .load-text { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: 0.1em; }
+  .load-bar { width: 200px; height: 2px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+  .load-fill { height: 100%; background: var(--amber); width: 0; transition: width 0.6s ease; }
+
+  @media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .charts-row, .bottom-row { grid-template-columns: 1fr; }
+    header { padding: 14px 16px; }
+    main { padding: 20px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="load-screen">
+  <div class="load-text" id="load-msg">CARREGANDO PIPELINE DATA...</div>
+  <div class="load-bar"><div class="load-fill" id="load-fill"></div></div>
+</div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">ET</div>
+    <div>
+      <div class="logo-text">LOGISTICS · ETL DASHBOARD</div>
+      <div class="logo-sub">BRONZE → SILVER → GOLD · MEDALLION ARCHITECTURE</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-dot"></div>
+    <span class="status-label">PIPELINE OK</span>
+    <span class="ts-label" id="gen-ts"></span>
+  </div>
+</header>
+
+<main>
+  <div class="section-label">// KPIs gerais</div>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">TOTAL PEDIDOS</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-sub">todos os status</div>
+    </div>
+    <div class="kpi teal">
+      <div class="kpi-label">ENTREGAS OK</div>
+      <div class="kpi-value" id="kpi-delivered">—</div>
+      <div class="kpi-sub" id="kpi-delivery-rate">—</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">ATRASADOS</div>
+      <div class="kpi-value" id="kpi-delayed">—</div>
+      <div class="kpi-sub" id="kpi-delay-rate">—</div>
+    </div>
+    <div class="kpi muted">
+      <div class="kpi-label">CUSTO MÉDIO FRETE</div>
+      <div class="kpi-value" id="kpi-avg-cost">—</div>
+      <div class="kpi-sub">por pedido</div>
+    </div>
+  </div>
+
+  <div class="section-label">// Performance por transportadora</div>
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-title">taxa de entrega por transportadora (%)</div>
+      <div style="position:relative;height:220px;">
+        <canvas id="chart-delivery" role="img" aria-label="Taxa de entrega por transportadora"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">custo médio de frete (R$)</div>
+      <div style="position:relative;height:220px;">
+        <canvas id="chart-cost" role="img" aria-label="Custo médio de frete por transportadora"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">// Regiões & tendência mensal</div>
+  <div class="bottom-row">
+    <div class="card delay3">
+      <div class="card-title">volume por região</div>
+      <table id="table-region">
+        <thead><tr>
+          <th>REGIÃO</th>
+          <th>PEDIDOS</th>
+          <th>RECEITA FRETE</th>
+          <th>ATRASOS</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card delay4">
+      <div class="card-title">pedidos por mês</div>
+      <div style="position:relative;height:230px;">
+        <canvas id="chart-trend" role="img" aria-label="Tendência mensal de pedidos"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:24px">// Tabela · carrier KPIs</div>
+  <div class="card" style="animation-delay:0.6s">
+    <div class="card-title">ranking de transportadoras</div>
+    <table id="table-carrier">
+      <thead><tr>
+        <th>TRANSPORTADORA</th>
+        <th>PEDIDOS</th>
+        <th>ENTREGUES</th>
+        <th>ATRASADOS</th>
+        <th>ENTREGA %</th>
+        <th>ATRASO %</th>
+        <th>LEAD TIME (dias)</th>
+        <th>FRETE MÉDIO</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</main>
+
+<footer>
+  ETL LOGISTICS PIPELINE · PYTHON · PANDAS · POLARS · PARQUET · NEXUS TECH BI
+</footer>
+
+<script>
+const AMBER  = '#f0a500';
+const AMBER2 = '#ffc847';
+const TEAL   = '#1daf82';
+const RED    = '#e05555';
+const MUTED  = '#3a3d43';
+const TEXT   = '#d4cfc7';
+const GRID   = 'rgba(255,255,255,0.05)';
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { ticks: { color: '#6b6760', font: { family: "'IBM Plex Mono'", size: 10 } }, grid: { color: GRID }, border: { color: MUTED } },
+    y: { ticks: { color: '#6b6760', font: { family: "'IBM Plex Mono'", size: 10 } }, grid: { color: GRID }, border: { color: MUTED } }
+  }
+};
+
+function fmt(n) { return Number(n).toLocaleString('pt-BR'); }
+function fmtR(n) { return 'R$ ' + Number(n).toFixed(2).replace('.', ','); }
+function fmtPct(n) { return Number(n).toFixed(1) + '%'; }
+
+async function loadData() {
+  const fill = document.getElementById('load-fill');
+  const msg  = document.getElementById('load-msg');
+
+  fill.style.width = '30%';
+  msg.textContent = 'LENDO report.json...';
+
+  let data;
+  try {
+    const res = await fetch('data/gold/report.json');
+    if (!res.ok) throw new Error('not found');
+    data = await res.json();
+  } catch(e) {
+    data = generateMockData();
+    msg.textContent = 'USANDO DADOS DE DEMO...';
+  }
+
+  fill.style.width = '70%';
+  msg.textContent = 'RENDERIZANDO CHARTS...';
+  await new Promise(r => setTimeout(r, 300));
+
+  renderDashboard(data);
+
+  fill.style.width = '100%';
+  await new Promise(r => setTimeout(r, 300));
+  document.getElementById('load-screen').classList.add('hide');
+}
+
+function renderDashboard(data) {
+  const carriers = data.tables.carrier_kpis;
+  const regions  = data.tables.region_summary;
+  const monthly  = data.tables.monthly_trend;
+
+  // timestamp
+  const ts = new Date(data.generated_at);
+  document.getElementById('gen-ts').textContent =
+    ts.toLocaleDateString('pt-BR') + ' · ' + ts.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+
+  // KPIs
+  const totalOrders   = carriers.reduce((s,r) => s + r.total_orders, 0);
+  const totalDelivered= carriers.reduce((s,r) => s + r.delivered, 0);
+  const totalDelayed  = carriers.reduce((s,r) => s + r.delayed, 0);
+  const avgCost       = carriers.reduce((s,r) => s + r.avg_freight_cost * r.total_orders, 0) / totalOrders;
+
+  document.getElementById('kpi-total').textContent      = fmt(totalOrders);
+  document.getElementById('kpi-delivered').textContent  = fmt(totalDelivered);
+  document.getElementById('kpi-delivery-rate').textContent = fmtPct(totalDelivered / totalOrders * 100) + ' do total';
+  document.getElementById('kpi-delayed').textContent    = fmt(totalDelayed);
+  document.getElementById('kpi-delay-rate').textContent = fmtPct(totalDelayed / totalOrders * 100) + ' do total';
+  document.getElementById('kpi-avg-cost').textContent   = fmtR(avgCost);
+
+  // Chart: Delivery rate
+  new Chart(document.getElementById('chart-delivery'), {
+    type: 'bar',
+    data: {
+      labels: carriers.map(r => r.carrier),
+      datasets: [{
+        data: carriers.map(r => r.delivery_rate_pct),
+        backgroundColor: carriers.map(r =>
+          r.delivery_rate_pct >= 60 ? 'rgba(29,175,130,0.7)' :
+          r.delivery_rate_pct >= 45 ? 'rgba(240,165,0,0.7)' : 'rgba(224,85,85,0.7)'
+        ),
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        ...chartDefaults.scales,
+        y: { ...chartDefaults.scales.y, min: 0, max: 100,
+          ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => fmtPct(ctx.raw) } }
+      }
+    }
+  });
+
+  // Chart: Avg freight cost
+  new Chart(document.getElementById('chart-cost'), {
+    type: 'bar',
+    data: {
+      labels: carriers.map(r => r.carrier),
+      datasets: [{
+        data: carriers.map(r => r.avg_freight_cost),
+        backgroundColor: 'rgba(240,165,0,0.25)',
+        borderColor: AMBER,
+        borderWidth: 1,
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'y',
+      scales: {
+        x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, callback: v => 'R$' + v } },
+        y: { ...chartDefaults.scales.y }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => fmtR(ctx.raw) } }
+      }
+    }
+  });
+
+  // Table: Regions
+  const tbody = document.querySelector('#table-region tbody');
+  const sorted = [...regions].sort((a,b) => b.total_orders - a.total_orders);
+  sorted.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.region}</td>
+      <td style="font-family:var(--mono)">${fmt(r.total_orders)}</td>
+      <td style="font-family:var(--mono);color:var(--amber2)">R$ ${fmt(r.total_freight_cost)}</td>
+      <td><span class="badge ${r.delayed_count > 20 ? 'badge-red' : r.delayed_count > 10 ? 'badge-amber' : 'badge-green'}">${r.delayed_count}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Chart: Monthly trend
+  new Chart(document.getElementById('chart-trend'), {
+    type: 'line',
+    data: {
+      labels: monthly.map(r => r.month),
+      datasets: [{
+        data: monthly.map(r => r.orders),
+        borderColor: AMBER,
+        backgroundColor: 'rgba(240,165,0,0.08)',
+        borderWidth: 2,
+        pointBackgroundColor: AMBER2,
+        pointRadius: 4,
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.raw + ' pedidos' } }
+      }
+    }
+  });
+
+  // Table: Carrier KPIs
+  const ctbody = document.querySelector('#table-carrier tbody');
+  carriers.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    const delClass = r.delivery_rate_pct >= 60 ? 'badge-green' : r.delivery_rate_pct >= 45 ? 'badge-amber' : 'badge-red';
+    const dlyClass = r.delay_rate_pct <= 10 ? 'badge-green' : r.delay_rate_pct <= 20 ? 'badge-amber' : 'badge-red';
+    tr.innerHTML = `
+      <td style="font-weight:500;color:#fff">${r.carrier}</td>
+      <td style="font-family:var(--mono)">${fmt(r.total_orders)}</td>
+      <td style="font-family:var(--mono);color:var(--teal)">${fmt(r.delivered)}</td>
+      <td style="font-family:var(--mono);color:var(--red)">${fmt(r.delayed)}</td>
+      <td><span class="badge ${delClass}">${fmtPct(r.delivery_rate_pct)}</span></td>
+      <td><span class="badge ${dlyClass}">${fmtPct(r.delay_rate_pct)}</span></td>
+      <td style="font-family:var(--mono)">${r.avg_lead_time_days ?? '—'} d</td>
+      <td style="font-family:var(--mono);color:var(--amber2)">${fmtR(r.avg_freight_cost)}</td>
+    `;
+    ctbody.appendChild(tr);
+  });
+}
+
+function generateMockData() {
+  return {
+    generated_at: new Date().toISOString(),
+    tables: {
+      carrier_kpis: [
+        { carrier:'Correios',       total_orders:112, delivered:68, delayed:15, avg_freight_cost:48.20, delivery_rate_pct:60.7, delay_rate_pct:13.4, avg_lead_time_days:5.2 },
+        { carrier:'Jadlog',         total_orders:98,  delivered:55, delayed:18, avg_freight_cost:72.50, delivery_rate_pct:56.1, delay_rate_pct:18.4, avg_lead_time_days:4.8 },
+        { carrier:'Sequoia',        total_orders:87,  delivered:47, delayed:10, avg_freight_cost:134.0, delivery_rate_pct:54.0, delay_rate_pct:11.5, avg_lead_time_days:6.1 },
+        { carrier:'Braspress',      total_orders:105, delivered:58, delayed:14, avg_freight_cost:89.30, delivery_rate_pct:55.2, delay_rate_pct:13.3, avg_lead_time_days:5.7 },
+        { carrier:'Total Express',  total_orders:98,  delivered:49, delayed:9,  avg_freight_cost:61.40, delivery_rate_pct:50.0, delay_rate_pct:9.2,  avg_lead_time_days:4.3 },
+      ],
+      region_summary: [
+        { region:'Sudeste',      total_orders:155, total_freight_cost:18420.50, avg_weight_kg:3.2, delayed_count:28 },
+        { region:'Nordeste',     total_orders:118, total_freight_cost:11230.00, avg_weight_kg:2.8, delayed_count:21 },
+        { region:'Sul',          total_orders:92,  total_freight_cost:9870.30,  avg_weight_kg:3.5, delayed_count:12 },
+        { region:'Centro-Oeste', total_orders:78,  total_freight_cost:8110.80,  avg_weight_kg:2.9, delayed_count:9  },
+        { region:'Norte',        total_orders:57,  total_freight_cost:6340.20,  avg_weight_kg:3.1, delayed_count:6  },
+      ],
+      monthly_trend: [
+        { month:'2024-01', orders:180, revenue:18200, delivered:102 },
+        { month:'2024-02', orders:165, revenue:16800, delivered:95  },
+        { month:'2024-03', orders:155, revenue:15400, delivered:84  },
+      ]
+    }
+  };
+}
+
+loadData();
+</script>
+</body>
+</html>
