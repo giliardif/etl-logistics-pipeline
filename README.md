@@ -1,10 +1,10 @@
-# 🚛 ETL Pipeline — Logística & Supply Chain
+# ETL Pipeline — Logística & Supply Chain
 
 > Pipeline de dados em camadas **Bronze → Silver → Gold** para análise de operações logísticas, construído com Python, Pandas e Polars.
 
 ---
 
-## 📐 Arquitetura
+## Arquitetura
 
 ```
 Fonte de Dados (CSV / API / ERP)
@@ -25,7 +25,7 @@ Fonte de Dados (CSV / API / ERP)
   └─────────────┘
 ```
 
-## 🧰 Stack
+## Stack
 
 | Camada | Tecnologia | Finalidade |
 |--------|-----------|------------|
@@ -35,7 +35,7 @@ Fonte de Dados (CSV / API / ERP)
 | Orquestração | Python nativo | Script modular e extensível |
 | Output | JSON + Parquet | Consumo por dashboards e APIs |
 
-## 📊 Tabelas Gold geradas
+## Tabelas Gold geradas
 
 | Tabela | Descrição |
 |--------|-----------|
@@ -43,7 +43,7 @@ Fonte de Dados (CSV / API / ERP)
 | `region_summary` | Volume, receita e peso médio por região |
 | `monthly_trend` | Série temporal de pedidos e receita por mês |
 
-## 🚀 Como executar
+## Como executar
 
 ```bash
 # 1. Clone o repositório
@@ -60,7 +60,7 @@ python etl_pipeline.py
 python -c "from etl_pipeline import run_pipeline; run_pipeline('seu_arquivo.csv')"
 ```
 
-## 📁 Estrutura do projeto
+## Estrutura do projeto
 
 ```
 etl-logistics-pipeline/
@@ -77,7 +77,7 @@ etl-logistics-pipeline/
         └── report.json
 ```
 
-## 🔄 Próximos passos sugeridos
+## Próximos passos sugeridos
 
 - [ ] Orquestração com **Apache Airflow** ou **Prefect**
 - [ ] Carga em **BigQuery** ou **DuckDB**
@@ -86,7 +86,7 @@ etl-logistics-pipeline/
 
 ---
 
-## 👤 Autor
+## Autor
 
 **Giliardi** — Data & AI Engineer  
 [LinkedIn](#) · [GitHub](#)
