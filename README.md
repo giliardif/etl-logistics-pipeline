@@ -1,6 +1,12 @@
 # ETL Pipeline — Logística & Supply Chain
 
+[![Pipeline](https://img.shields.io/badge/pipeline-Bronze→Silver→Gold-f0a500?style=flat-square&logo=python&logoColor=white)](https://giliardif.github.io/etl-logistics-pipeline/)
+[![Stack](https://img.shields.io/badge/stack-Python%20·%20Pandas%20·%20Polars-1daf82?style=flat-square)](https://github.com/giliardif/etl-logistics-pipeline)
+[![Dashboard](https://img.shields.io/badge/dashboard-ao%20vivo-e05555?style=flat-square)](https://giliardif.github.io/etl-logistics-pipeline/)
+
 > Pipeline de dados em camadas **Bronze → Silver → Gold** para análise de operações logísticas, construído com Python, Pandas e Polars.
+
+🔗 **Dashboard ao vivo:** [giliardif.github.io/etl-logistics-pipeline](https://giliardif.github.io/etl-logistics-pipeline/)
 
 ---
 
@@ -47,7 +53,7 @@ Fonte de Dados (CSV / API / ERP)
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/seu-usuario/etl-logistics-pipeline
+git clone https://github.com/giliardif/etl-logistics-pipeline
 cd etl-logistics-pipeline
 
 # 2. Instale as dependências
