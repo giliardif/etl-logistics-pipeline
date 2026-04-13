@@ -233,6 +233,91 @@
     header { padding: 14px 16px; }
     main { padding: 20px 12px; }
   }
+
+  /* ── PIPELINE CONTROL ── */
+  .pipeline-control {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 32px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .pipeline-left { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .run-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: #0d0f12;
+    background: var(--amber);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .run-btn:hover:not(:disabled) { background: var(--amber2); transform: translateY(-1px); }
+  .run-btn:disabled { background: var(--muted); cursor: not-allowed; color: #888; transform: none; }
+  .pipeline-stages { display: flex; flex-direction: column; gap: 6px; }
+  .stage-row { display: flex; align-items: center; gap: 8px; }
+  .stage-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border2);
+    transition: background 0.3s, box-shadow 0.3s;
+    flex-shrink: 0;
+  }
+  .stage-dot.active  { background: var(--amber); box-shadow: 0 0 6px rgba(240,165,0,0.5); }
+  .stage-dot.done    { background: var(--teal); }
+  .stage-dot.error   { background: var(--red); }
+  .stage-name { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.08em; transition: color 0.3s; }
+  .stage-name.active { color: var(--amber2); }
+  .stage-name.done   { color: var(--teal); }
+  .stage-badge {
+    font-family: var(--mono); font-size: 9px; padding: 1px 5px;
+    border-radius: 3px; margin-left: 4px; opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .stage-badge.show { opacity: 1; }
+  .stage-badge.ok  { background: rgba(29,175,130,0.15); color: var(--teal); }
+  .stage-badge.run { background: rgba(240,165,0,0.15); color: var(--amber2); }
+
+  /* terminal log */
+  .pipeline-log {
+    background: #090b0e;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    height: 160px;
+    overflow-y: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.7;
+  }
+  .pipeline-log::-webkit-scrollbar { width: 4px; }
+  .pipeline-log::-webkit-scrollbar-track { background: transparent; }
+  .pipeline-log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .log-line { display: block; animation: logIn 0.15s ease forwards; }
+  @keyframes logIn { from { opacity:0; transform: translateX(-4px); } to { opacity:1; transform: none; } }
+  .log-ts   { color: var(--muted); }
+  .log-info { color: var(--teal); }
+  .log-warn { color: var(--amber2); }
+  .log-ok   { color: var(--teal); font-weight: 500; }
+  .log-step { color: var(--amber); }
+  .log-dim  { color: #3a3d43; }
+
+  /* progress bar */
+  .pipeline-progress { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .prog-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .prog-bar-fill { height: 100%; background: var(--amber); width: 0%; transition: width 0.5s ease; border-radius: 2px; }
+  .prog-label { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 0.08em; }
+
+  @media (max-width: 768px) {
+    .pipeline-control { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -258,6 +343,51 @@
 </header>
 
 <main>
+  <div class="section-label">// Pipeline Control</div>
+  <div class="pipeline-control">
+    <!-- Left: button + stages -->
+    <div class="pipeline-left">
+      <button class="run-btn" id="run-btn" onclick="runPipeline()">▶ EXECUTAR PIPELINE</button>
+      <div class="pipeline-stages">
+        <div class="stage-row">
+          <div class="stage-dot" id="dot-ingest"></div>
+          <span class="stage-name" id="lbl-ingest">INGEST RAW DATA</span>
+          <span class="stage-badge" id="badge-ingest">RUNNING</span>
+        </div>
+        <div class="stage-row">
+          <div class="stage-dot" id="dot-bronze"></div>
+          <span class="stage-name" id="lbl-bronze">BRONZE LAYER</span>
+          <span class="stage-badge" id="badge-bronze">RUNNING</span>
+        </div>
+        <div class="stage-row">
+          <div class="stage-dot" id="dot-silver"></div>
+          <span class="stage-name" id="lbl-silver">SILVER LAYER</span>
+          <span class="stage-badge" id="badge-silver">RUNNING</span>
+        </div>
+        <div class="stage-row">
+          <div class="stage-dot" id="dot-gold"></div>
+          <span class="stage-name" id="lbl-gold">GOLD LAYER</span>
+          <span class="stage-badge" id="badge-gold">RUNNING</span>
+        </div>
+        <div class="stage-row">
+          <div class="stage-dot" id="dot-export"></div>
+          <span class="stage-name" id="lbl-export">EXPORT PARQUET / JSON</span>
+          <span class="stage-badge" id="badge-export">RUNNING</span>
+        </div>
+      </div>
+      <div class="pipeline-progress">
+        <div class="prog-bar-wrap"><div class="prog-bar-fill" id="prog-fill"></div></div>
+        <div class="prog-label" id="prog-label">AGUARDANDO EXECUÇÃO</div>
+      </div>
+    </div>
+
+    <!-- Right: terminal log -->
+    <div class="pipeline-log" id="pipeline-log">
+      <span class="log-line log-dim">$ python etl_pipeline.py</span>
+      <span class="log-line log-dim">  aguardando comando...</span>
+    </div>
+  </div>
+
   <div class="section-label">// KPIs gerais</div>
   <div class="kpi-grid">
     <div class="kpi">
@@ -558,6 +688,191 @@ function generateMockData() {
       ]
     }
   };
+}
+
+// ── PIPELINE SIMULATION ──
+const LOG_SCRIPTS = [
+  // [delay_ms, class, text]
+  [0,    'log-dim',  '$ python etl_pipeline.py --env prod'],
+  [120,  'log-info', '[INFO] Iniciando ETL Logistics Pipeline v1.0'],
+  [280,  'log-ts',   '[2024-03-15 09:00:01] Carregando configurações...'],
+  // INGEST
+  [500,  'log-step', '── STAGE 1/5 · INGEST RAW DATA ──────────────'],
+  [700,  'log-ts',   '[09:00:02] Lendo orders.csv ... 500 registros'],
+  [900,  'log-ts',   '[09:00:02] Lendo carriers.csv ... 5 transportadoras'],
+  [1100, 'log-ok',   '[OK] Ingestão concluída — 500 rows carregadas'],
+  // BRONZE
+  [1400, 'log-step', '── STAGE 2/5 · BRONZE LAYER ─────────────────'],
+  [1600, 'log-ts',   '[09:00:03] Validando schema de entrada...'],
+  [1800, 'log-ts',   '[09:00:03] Cast de tipos: order_date → datetime'],
+  [2000, 'log-warn', '[WARN] 3 registros com freight_cost nulo → fillna(0)'],
+  [2200, 'log-ok',   '[OK] Bronze salvo → data/bronze/orders.parquet'],
+  // SILVER
+  [2500, 'log-step', '── STAGE 3/5 · SILVER LAYER ─────────────────'],
+  [2700, 'log-ts',   '[09:00:04] Aplicando regras de negócio...'],
+  [2900, 'log-ts',   '[09:00:04] Calculando is_delayed (lead_time > 7d)'],
+  [3100, 'log-ts',   '[09:00:04] Join orders ↔ carriers por carrier_id'],
+  [3300, 'log-ts',   '[09:00:05] Removendo duplicatas: 0 encontradas'],
+  [3500, 'log-ok',   '[OK] Silver salvo → data/silver/orders_clean.parquet'],
+  // GOLD
+  [3800, 'log-step', '── STAGE 4/5 · GOLD LAYER ───────────────────'],
+  [4000, 'log-ts',   '[09:00:05] Agregando KPIs por transportadora...'],
+  [4200, 'log-ts',   '[09:00:05] Calculando delivery_rate_pct, delay_rate_pct'],
+  [4400, 'log-ts',   '[09:00:06] Agregando volume por região (5 regiões)'],
+  [4600, 'log-ts',   '[09:00:06] Gerando tendência mensal (3 meses)'],
+  [4800, 'log-ok',   '[OK] Gold salvo → data/gold/carrier_kpis.parquet'],
+  // EXPORT
+  [5100, 'log-step', '── STAGE 5/5 · EXPORT ───────────────────────'],
+  [5300, 'log-ts',   '[09:00:07] Serializando report.json...'],
+  [5500, 'log-ts',   '[09:00:07] Escrevendo data/gold/report.json'],
+  [5700, 'log-ok',   '[OK] Export concluído — 1 arquivo JSON'],
+  [5900, 'log-info', '────────────────────────────────────────────'],
+  [6100, 'log-ok',   '[DONE] Pipeline finalizado em 5.84s · 500 pedidos processados'],
+];
+
+const STAGE_TIMINGS = {
+  ingest: { start: 400,  end: 1200 },
+  bronze: { start: 1300, end: 2300 },
+  silver: { start: 2400, end: 3600 },
+  gold:   { start: 3700, end: 4900 },
+  export: { start: 5000, end: 6200 },
+};
+
+const PROGRESS_STEPS = [
+  [400,  5,  'STAGE 1/5 · INGEST'],
+  [1200, 20, 'STAGE 1/5 · INGEST OK'],
+  [1300, 25, 'STAGE 2/5 · BRONZE'],
+  [2300, 42, 'STAGE 2/5 · BRONZE OK'],
+  [2400, 46, 'STAGE 3/5 · SILVER'],
+  [3600, 63, 'STAGE 3/5 · SILVER OK'],
+  [3700, 67, 'STAGE 4/5 · GOLD'],
+  [4900, 84, 'STAGE 4/5 · GOLD OK'],
+  [5000, 88, 'STAGE 5/5 · EXPORT'],
+  [6200, 100,'PIPELINE CONCLUÍDO'],
+];
+
+function setStage(id, state) {
+  const dot   = document.getElementById('dot-' + id);
+  const lbl   = document.getElementById('lbl-' + id);
+  const badge = document.getElementById('badge-' + id);
+  dot.className   = 'stage-dot ' + state;
+  lbl.className   = 'stage-name ' + state;
+  badge.textContent = state === 'active' ? 'RUNNING' : state === 'done' ? 'OK' : 'RUNNING';
+  badge.className   = 'stage-badge show ' + (state === 'active' ? 'run' : 'ok');
+  if (state === 'done') badge.textContent = 'OK';
+}
+
+function appendLog(cls, text) {
+  const log  = document.getElementById('pipeline-log');
+  const span = document.createElement('span');
+  span.className = 'log-line ' + cls;
+  span.textContent = text;
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+}
+
+function generateNewMockData() {
+  const variance = () => 0.85 + Math.random() * 0.30;
+  const carriers = [
+    { carrier:'Correios',       total_orders:Math.round(112*variance()), delivered:0, delayed:0, avg_freight_cost:+(48.20*variance()).toFixed(2), avg_lead_time_days:+(5.2*variance()).toFixed(1) },
+    { carrier:'Jadlog',         total_orders:Math.round(98*variance()),  delivered:0, delayed:0, avg_freight_cost:+(72.50*variance()).toFixed(2), avg_lead_time_days:+(4.8*variance()).toFixed(1) },
+    { carrier:'Sequoia',        total_orders:Math.round(87*variance()),  delivered:0, delayed:0, avg_freight_cost:+(134.0*variance()).toFixed(2), avg_lead_time_days:+(6.1*variance()).toFixed(1) },
+    { carrier:'Braspress',      total_orders:Math.round(105*variance()), delivered:0, delayed:0, avg_freight_cost:+(89.30*variance()).toFixed(2), avg_lead_time_days:+(5.7*variance()).toFixed(1) },
+    { carrier:'Total Express',  total_orders:Math.round(98*variance()),  delivered:0, delayed:0, avg_freight_cost:+(61.40*variance()).toFixed(2), avg_lead_time_days:+(4.3*variance()).toFixed(1) },
+  ];
+  carriers.forEach(c => {
+    c.delivery_rate_pct = +(45 + Math.random() * 30).toFixed(1);
+    c.delay_rate_pct    = +(5  + Math.random() * 20).toFixed(1);
+    c.delivered = Math.round(c.total_orders * c.delivery_rate_pct / 100);
+    c.delayed   = Math.round(c.total_orders * c.delay_rate_pct   / 100);
+  });
+  return {
+    generated_at: new Date().toISOString(),
+    tables: {
+      carrier_kpis: carriers,
+      region_summary: [
+        { region:'Sudeste',      total_orders:Math.round(155*variance()), total_freight_cost:+(18420*variance()).toFixed(2), avg_weight_kg:3.2, delayed_count:Math.round(28*variance()) },
+        { region:'Nordeste',     total_orders:Math.round(118*variance()), total_freight_cost:+(11230*variance()).toFixed(2), avg_weight_kg:2.8, delayed_count:Math.round(21*variance()) },
+        { region:'Sul',          total_orders:Math.round(92*variance()),  total_freight_cost:+(9870*variance()).toFixed(2),  avg_weight_kg:3.5, delayed_count:Math.round(12*variance()) },
+        { region:'Centro-Oeste', total_orders:Math.round(78*variance()),  total_freight_cost:+(8110*variance()).toFixed(2),  avg_weight_kg:2.9, delayed_count:Math.round(9*variance())  },
+        { region:'Norte',        total_orders:Math.round(57*variance()),  total_freight_cost:+(6340*variance()).toFixed(2),  avg_weight_kg:3.1, delayed_count:Math.round(6*variance())  },
+      ],
+      monthly_trend: [
+        { month:'2024-01', orders:Math.round(180*variance()), revenue:18200, delivered:102 },
+        { month:'2024-02', orders:Math.round(165*variance()), revenue:16800, delivered:95  },
+        { month:'2024-03', orders:Math.round(155*variance()), revenue:15400, delivered:84  },
+      ]
+    }
+  };
+}
+
+function refreshDashboard(data) {
+  // Clear old charts
+  Chart.getChart('chart-delivery')?.destroy();
+  Chart.getChart('chart-cost')?.destroy();
+  Chart.getChart('chart-trend')?.destroy();
+  // Clear tables
+  document.querySelector('#table-region tbody').innerHTML = '';
+  document.querySelector('#table-carrier tbody').innerHTML = '';
+  // Re-render
+  renderDashboard(data);
+  // Flash KPIs
+  document.querySelectorAll('.kpi-value').forEach(el => {
+    el.style.transition = 'color 0.3s';
+    el.style.color = 'var(--amber2)';
+    setTimeout(() => { el.style.color = ''; }, 800);
+  });
+}
+
+async function runPipeline() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+
+  // Reset log
+  const log = document.getElementById('pipeline-log');
+  log.innerHTML = '';
+
+  // Reset stages
+  ['ingest','bronze','silver','gold','export'].forEach(id => {
+    document.getElementById('dot-'+id).className = 'stage-dot';
+    document.getElementById('lbl-'+id).className = 'stage-name';
+    document.getElementById('badge-'+id).className = 'stage-badge';
+  });
+
+  // Reset progress
+  document.getElementById('prog-fill').style.width = '0%';
+  document.getElementById('prog-label').textContent = 'EXECUTANDO...';
+
+  // Schedule log lines
+  LOG_SCRIPTS.forEach(([delay, cls, text]) => {
+    setTimeout(() => appendLog(cls, text), delay);
+  });
+
+  // Schedule stage transitions
+  Object.entries(STAGE_TIMINGS).forEach(([id, {start, end}]) => {
+    setTimeout(() => setStage(id, 'active'), start);
+    setTimeout(() => setStage(id, 'done'),   end);
+  });
+
+  // Schedule progress bar
+  PROGRESS_STEPS.forEach(([delay, pct, label]) => {
+    setTimeout(() => {
+      document.getElementById('prog-fill').style.width = pct + '%';
+      document.getElementById('prog-label').textContent = label;
+    }, delay);
+  });
+
+  // On finish: update dashboard data
+  setTimeout(() => {
+    const newData = generateNewMockData();
+    refreshDashboard(newData);
+    document.getElementById('prog-label').textContent = 'CONCLUÍDO · ' + new Date().toLocaleTimeString('pt-BR');
+    document.getElementById('prog-fill').style.background = 'var(--teal)';
+    // Update header status
+    document.querySelector('.status-label').textContent = 'PIPELINE OK';
+    btn.disabled = false;
+    btn.textContent = '↺ RE-RUN PIPELINE';
+  }, 6400);
 }
 
 loadData();
